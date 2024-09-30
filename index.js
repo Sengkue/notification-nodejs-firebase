@@ -9,14 +9,14 @@ const port = 3000;
 
 app.use(bodyParser.json());
 
-// Test the database connection
+// Sync the database
 sequelize.sync().then(() => {
   console.log("Database synced!");
 }).catch(err => {
   console.error("Unable to sync the database:", err);
 });
 
-// API route to save the token
+// API endpoint to receive and store the token
 app.post('/api/tokens', async (req, res) => {
   const { token } = req.body;
 
@@ -37,5 +37,5 @@ app.post('/api/tokens', async (req, res) => {
 
 // Start the server
 app.listen(port, () => {
-  console.log(`Server is running on http://10.2.6.80:${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });
