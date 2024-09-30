@@ -1,41 +1,41 @@
 // index.js
 const express = require('express');
 const bodyParser = require('body-parser');
-const admin = require('firebase-admin');
-
-// Initialize Firebase Admin SDK
-const serviceAccount = require('./path/to/serviceAccountKey.json'); // Update path to your service account key
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+const sequelize = require('./config/db');
+const Token = require('./models/Token');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 3000;
 
 app.use(bodyParser.json());
 
-// Endpoint to send a notification
-app.post('/send-notification', async (req, res) => {
-  const { token, title, body } = req.body;
+// Test the database connection
+sequelize.sync().then(() => {
+  console.log("Database synced!");
+}).catch(err => {
+  console.error("Unable to sync the database:", err);
+});
 
-  const message = {
-    notification: {
-      title: title,
-      body: body,
-    },
-    token: token,
-  };
+// API route to save the token
+app.post('/api/tokens', async (req, res) => {
+  const { token } = req.body;
 
   try {
-    const response = await admin.messaging().send(message);
-    res.status(200).send(`Notification sent successfully: ${response}`);
+    const [newToken, created] = await Token.findOrCreate({
+      where: { token: token },
+    });
+
+    if (created) {
+      res.status(200).json({ message: 'Token saved successfully', token: newToken });
+    } else {
+      res.status(200).json({ message: 'Token already exists', token: newToken });
+    }
   } catch (error) {
-    console.error('Error sending notification:', error);
-    res.status(500).send('Error sending notification');
+    res.status(500).json({ message: 'Error saving token', error: error.message });
   }
 });
 
+// Start the server
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });
