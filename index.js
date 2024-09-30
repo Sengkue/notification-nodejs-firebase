@@ -1,37 +1,37 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const sequelize = require('./config/db');
-const Token = require('./models/Token');
+const { DeviceToken } = require('./models');
 
 const app = express();
-const port = 3000;
+const PORT = 3000;
 
+// Middleware
 app.use(bodyParser.json());
 
-sequelize.sync().then(() => {
-  console.log("Database synced!");
-}).catch(err => {
-  console.error("Unable to sync the database:", err);
-});
+// Endpoint to receive the device token and save it to the database
+app.post('/api/device-token', async (req, res) => {
+    const { token } = req.body;
 
-app.post('/api/tokens', async (req, res) => {
-  const { token } = req.body;
-
-  try {
-    const [newToken, created] = await Token.findOrCreate({
-      where: { token: token },
-    });
-
-    if (created) {
-      res.status(200).json({ message: 'Token saved successfully', token: newToken });
-    } else {
-      res.status(200).json({ message: 'Token already exists', token: newToken });
+    if (!token) {
+        return res.status(400).json({ error: "Device token is required" });
     }
-  } catch (error) {
-    res.status(500).json({ message: 'Error saving token', error: error.message });
-  }
+
+    try {
+        // Save token in the database
+        const existingToken = await DeviceToken.findOne({ where: { token } });
+        if (existingToken) {
+            return res.status(400).json({ error: "Token already registered" });
+        }
+
+        const newToken = await DeviceToken.create({ token });
+        res.status(200).json({ message: "Device token registered successfully", token: newToken });
+    } catch (error) {
+        console.error("Error saving device token:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
