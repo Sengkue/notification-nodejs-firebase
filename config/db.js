@@ -3,7 +3,7 @@ const { Sequelize } = require('sequelize');
 
 // Connect to MySQL database
 const sequelize = new Sequelize('notification', 'root', '', {
-  host: '10.2.6.80',
+  host: 'nod',
   dialect: 'mysql',
 });
 
